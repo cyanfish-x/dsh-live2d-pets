@@ -83,7 +83,7 @@ DSH Web GUI 中一只悬浮于角落的 Live2D 桌宠，实时镜像当前会话
 - **内置模型清单**（`src/presets/presets.jsonc`，设置面板模型列表的只读部分，JSONC 支持注释）：策展的 URL 条目，**只读不可增删改**。**已定稿 5 条**（2026-08）：Hiyori / Haru / Mao / Mark / Natori，均为 Live2D 官方示例模型（Cubism 4，商用可用，需标注著作权；[示例模型条款](https://www.live2d.com/eula/live2d-sample-model-terms_cn.html)）
 - 清单门槛为**许可可标注**：每条记录模型名称、作者、许可类型与许可链接（点击可查看），**不做许可合规判断**；NC（禁止商用）模型可收录，但列表中**明确标注"仅限非商用"**；条目可可选附带 `spatialTap`（如 Hiyori 的居中分区矩形）覆盖该模型空间回退
 - **默认模型商用安全**：默认 Hiyori（商用可用），插件装完自动加载不会把用户带入 NC 使用
-- **自定义模型**：设置面板「模型列表」中可**添加 / 删除 / 修改**用户自备模型（名称 + `.model3.json` URL，零许可风险路径）；编辑时可展开**空间分区覆盖（可选）**，按字段填写 0–1 相对比例（留空=该字段用全局默认）；编辑时可展开**动画映射（可选）**：实时解析该模型 `.model3.json` 的 `Motions` 动作组，为 5 个状态（空闲/思考/出错/完成/等待审批）与 4 个互动部位（摸头/摸腿/摸手/摸身体）各选择多个动作组；多选不做排序，触发时随机选一个播放；未配置槽位沿用内置默认候选链；解析失败仍可保存模型，映射区提示“无法解析动画列表，可稍后重试”；自定义条目持久化到 `$DSH_HOME/live2d-pet/custom-models.jsonc`，与内置清单合并展示、均可选中；删除/修改仅作用于自定义条目
+- **自定义模型**：设置面板「模型列表」中可**添加 / 删除 / 修改**用户自备模型（名称 + `.model3.json` URL，零许可风险路径）；URL 框支持**远程 http(s) URL 或本地绝对路径**（Unix `~`/`/home/…`、Windows `C:/…`）；URL 框右侧提供**「选择本地文件」按钮**——打开插件自研的**目录浏览弹层**（Host 侧 Node `fs` 扫描 `POST /api/live2d-pet/list-local-dir`，逐级进子目录、点 `.model3.json` 文件回填其**绝对路径**；不依赖 DSH `directoryPicker` 服务，见 ADR-010）；本地路径由 Host 映射为同源虚拟路由 `/pet-local-models/<id>/<fileName>` 供浏览器加载（ADR-010）。编辑时可展开**空间分区覆盖（可选）**，按字段填写 0–1 相对比例（留空=该字段用全局默认）；编辑时可展开**动画映射（可选）**：实时解析该模型 `.model3.json` 的 `Motions` 动作组，为 5 个状态（空闲/思考/出错/完成/等待审批）与 4 个互动部位（摸头/摸腿/摸手/摸身体）各选择多个动作组；多选不做排序，触发时随机选一个播放；未配置槽位沿用内置默认候选链；解析失败仍可保存模型，映射区提示“无法解析动画列表，可稍后重试”；自定义条目持久化到 `$DSH_HOME/live2d-pet/custom-models.jsonc`，与内置清单合并展示、均可选中；删除/修改仅作用于自定义条目
 - **加载失败兜底**：显示静态头像占位 + 错误气泡提示，不影响 GUI 其它功能；可从设置切换其它模型
 
 ## 7. 性能与不打扰
@@ -117,6 +117,7 @@ DSH Web GUI 中一只悬浮于角落的 Live2D 桌宠，实时镜像当前会话
 - 渲染：pixi-live2d-display 0.4.0 + PixiJS 6.5.10 + Cubism Core 4（ADR-003；ADR-001 已被其取代）
 - 挂载：Client Slot `shell.overlay`；设置入口：Client Slot `settings.section`（独立设置页，ADR-002）+ Host `ctx.settings` namespace（`$DSH_HOME/settings.yaml`；base = cordis.yml 条目 config 子集，用户层覆盖；自定义模型条目存于 `$DSH_HOME/live2d-pet/custom-models.jsonc`，不再写入 settings.yaml）
 - 设置传输：**不走 settingsScope wire**（dsh-host-apiproxy 白名单不暴露第三方 namespace，官方 deferred work，见 research 3.4）；改走插件自身同源 API `GET/POST /api/live2d-pet/settings`（Host 直连 `ctx.settings`，持久化语义不变，research 3.5）
+- 同源 POST 约定：所有 `POST /api/live2d-pet/*` 请求**必须带 `Content-Type: application/json` 头**（无参 POST 用空 body `{}`），否则被 dsh-host-apiproxy 在分发前以 **415 Unsupported Media Type** 拒绝（apiproxy 对所有 `/api` POST 强校验 JSON 媒体类型）
 - 状态源：Host 订阅 `agent/status`、`agent/error`、`agent/turn-stopping` 等（ADR-002）
 - 状态传输：Host→Client 经同源 **SSE 端点 `/api/live2d-pet/events`** 推送（连接即回发快照 + 变更推送 + 30s 心跳，ADR-006），替代 v0.1 的 800ms 轮询；初始首帧仍走 `GET /api/live2d-pet/state`
 - **人设体系**（ADR-007）：

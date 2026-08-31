@@ -1,6 +1,6 @@
 {
   "name": "dsh-live2d-pets",
-  "version": "0.2.2",
+  "version": "0.2.3",
   "description": "Live2D pet plugin for DeepSeek Harness: a characterful agent companion — follows session state, switchable personas, bring-your-own models",
   "type": "module",
   "main": "lib/index.js",

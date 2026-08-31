@@ -122,6 +122,10 @@ export function apply(ctx: Context, config: Config): void {
     }),
   }
 
+  // 「选择本地文件」不依赖 DSH 的 directoryPicker 服务（该服务须另行加载
+  // native 后端插件，未加载时访问会抛「without inject」）。改为插件自研：
+  // 由 Host 侧 Node fs 直接扫描目录（POST /api/live2d-pet/list-local-dir），
+  // 客户端逐级导航并选中 `.model3.json` 文件回填绝对路径。
   // 路由随插件生命周期注册/清理；配置变更（HMR / settings 热更新）经 resolveConfig 即时反映。
   // 插件卸载时同时关闭全部活跃 SSE 流（onStream），避免旧流在路由注销后空转心跳。
   ctx.effect(() => {

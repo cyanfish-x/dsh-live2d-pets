@@ -108,10 +108,10 @@ export function isRemoteModelUrl(value: string): boolean {
   return /^https?:\/\//i.test(value.trim())
 }
 
-/** 判断是否为本地绝对路径（Windows 盘符 / UNC / Unix 根路径）。 */
+/** 判断是否为本地路径（Windows 盘符 / UNC / Unix 根路径 / Unix 家目录 ~）。 */
 export function isLocalModelPath(value: string): boolean {
   const v = value.trim()
-  return /^[a-zA-Z]:[\\/]/.test(v) || /^\\\\/.test(v) || /^\//.test(v)
+  return /^[a-zA-Z]:[\\/]/.test(v) || /^\\\\/.test(v) || /^\//.test(v) || /^~(?:\/|$)/.test(v)
 }
 
 /** 自定义模型位置是否受支持（远程 URL 或本地绝对路径）。 */

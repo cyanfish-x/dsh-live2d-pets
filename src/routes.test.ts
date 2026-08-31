@@ -69,7 +69,12 @@ function makeRoutes() {
     write: vi.fn(async () => {}),
   }
   const openStreams: Array<() => void> = []
-  const routes = makePetRoutes({ service, packageRoot: dir, settings, onStream: (close) => { openStreams.push(close) } })
+  const routes = makePetRoutes({
+    service,
+    packageRoot: dir,
+    settings,
+    onStream: (close) => { openStreams.push(close) },
+  })
   const route = (path: string) => routes.find((r) => r.path === path)
   const cleanup = () => { delete process.env.DSH_HOME; rmSync(dir, { recursive: true, force: true }) }
   return { route, settings, service, emit, openStreams, cleanup }
@@ -151,6 +156,62 @@ describe('makePetRoutes API 路由', () => {
     expect(res.state.status).toBe(400)
     const body = JSON.parse(res.state.body.toString('utf8'))
     expect(body.error).toBe('body-too-large')
+    cleanup()
+  })
+
+  it('POST /list-local-dir 列出指定目录下的子目录与 .model3.json', async () => {
+    const homeDir = mkdtempSync(join(tmpdir(), 'dsh-l2d-route-list-'))
+    const sub = join(homeDir, 'subdir')
+    mkdirSync(sub)
+    writeFileSync(join(homeDir, 'foo.model3.json'), '{}', 'utf8')
+    writeFileSync(join(homeDir, 'ignore.txt'), 'x', 'utf8')
+    const { route, cleanup } = makeRoutes()
+    const res = fakeRes()
+    await route(`${PET_API_PREFIX}/list-local-dir`)!.handler(
+      fakeReq('POST', JSON.stringify({ path: homeDir })),
+      res as never,
+    )
+    expect(res.state.status).toBe(200)
+    const body = JSON.parse(res.state.body.toString('utf8'))
+    expect(body.ok).toBe(true)
+    const files = body.listing.files.map((f: { name: string }) => f.name)
+    const dirs = body.listing.dirs.map((d: { name: string }) => d.name)
+    expect(files).toContain('foo.model3.json')
+    expect(dirs).toContain('subdir')
+    expect(files).not.toContain('ignore.txt')
+    rmSync(homeDir, { recursive: true, force: true })
+    cleanup()
+  })
+
+  it('POST /list-local-dir 指定含 .model3.json 的目录返回其文件列表', async () => {
+    const modelDir = mkdtempSync(join(tmpdir(), 'dsh-l2d-route-list2-'))
+    writeFileSync(join(modelDir, 'foo.model3.json'), '{}', 'utf8')
+    const { route, cleanup } = makeRoutes()
+    const res = fakeRes()
+    await route(`${PET_API_PREFIX}/list-local-dir`)!.handler(
+      fakeReq('POST', JSON.stringify({ path: modelDir })),
+      res as never,
+    )
+    expect(res.state.status).toBe(200)
+    const body = JSON.parse(res.state.body.toString('utf8'))
+    expect(body.ok).toBe(true)
+    expect(body.listing.path).toBe(modelDir)
+    expect(body.listing.files.map((f: { path: string }) => f.path)).toContain(join(modelDir, 'foo.model3.json'))
+    rmSync(modelDir, { recursive: true, force: true })
+    cleanup()
+  })
+
+  it('POST /list-local-dir 目标不可读时返回 directory-unreadable', async () => {
+    const { route, cleanup } = makeRoutes()
+    const res = fakeRes()
+    await route(`${PET_API_PREFIX}/list-local-dir`)!.handler(
+      fakeReq('POST', JSON.stringify({ path: '/nonexistent-dir-xyz' })),
+      res as never,
+    )
+    expect(res.state.status).toBe(200)
+    const body = JSON.parse(res.state.body.toString('utf8'))
+    expect(body.ok).toBe(false)
+    expect(body.error).toBe('directory-unreadable')
     cleanup()
   })
 })

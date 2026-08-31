@@ -31,6 +31,17 @@ README 声称支持“本机可达的本地模型地址”，但浏览器不能�
   - 读取文件并返回给浏览器；
 - `resolveModelUrl()` 对本地路径返回上述虚拟 URL，客户端照常通过同源 HTTP 加载。
 
+### 「选择本地文件」按钮（v0.2.3，v0.2.4 改为自研目录浏览）
+
+设置页 URL 框右侧新增「选择本地文件」按钮，回填本地模型的**文件绝对路径**：
+
+- **不依赖 DSH 的 `directoryPicker` 服务**（该服务须另行加载 `dsh-host-directory-picker-*` 后端插件；未加载时访问 `ctx.directoryPicker` 会抛 `cannot get property "directoryPicker" without inject`，导致整个插件加载失败）。改为插件自研：Host 侧直接用 Node `fs` 扫描目录，客户端逐级导航。
+  - 新增 Host 端点 `POST /api/live2d-pet/list-local-dir`：入参 `{ path? }`，返回 `{ ok, listing }`，`listing` 含当前路径、家目录、上级、子目录列表、以及当前目录下的 `.model3.json` 文件列表（`listLocalDir()`，安全 stat + 排序 + 跳过损坏条目）；
+  - 客户端设置页弹层（`LocalFileBrowser`）：点「🏠 家目录」/「⬆ 上级」/子目录逐级进入，点 `.model3.json` 文件即回填其绝对路径到 URL 框；
+- 回填的是 `.model3.json` **文件**绝对路径（满足“选文件”预期），仍走既有 `/pet-local-models/...` 路由加载；
+- 用户仍可手填本地绝对路径，并支持 Unix 家目录简写 `~/...`（`localModelTarget`/`expandLocalPath` 先行展开）。
+- 所有 `POST /api/live2d-pet/*` 必须带 `Content-Type: application/json`（无参 POST 用 `body: '{}'`），否则被 dsh-host-apiproxy 在分发前以 415 拒绝。
+
 ## Alternatives Considered
 
 ### 备选方案 A：junction 链接到静态资源目录

@@ -14,7 +14,7 @@ import type { PetService } from './service.ts'
 import { listBuiltinPresets } from './models-host.ts'
 import type { CustomModelEntry } from './models.ts'
 import { isLocalModelPath } from './models.ts'
-import { resolveLocalModelFile } from './local-models.ts'
+import { resolveLocalModelFile, listLocalDir } from './local-models.ts'
 import type { SettingsPathOp } from '@deepseek-ai/dsh-settings'
 
 /** 设置读写 API（Host 直连 ctx.settings；不走 wire 白名单，见 research/settings-tab.md）。 */
@@ -228,6 +228,15 @@ export function makePetRoutes(deps: {
       presetsPath: join(packageRoot, 'src', 'presets', 'presets.jsonc'),
       customModelsPath: service.customModelsFile().path,
     })),
+    // 「选择本地文件」：不依赖 DSH 的 directoryPicker 服务，插件自研浏览——
+    // Host 侧直接用 Node fs 列出目录，客户端逐级导航并选中 `.model3.json` 文件，
+    // 回填其绝对路径到设置页 URL 框（见 settings.ts 目录浏览弹层）。
+    postRoute(`${PET_API_PREFIX}/list-local-dir`, (body) => {
+      const target = typeof body.path === 'string' ? body.path : null
+      const listing = listLocalDir(target)
+      if (!listing) return Promise.resolve({ ok: false, error: 'directory-unreadable', listing: null })
+      return Promise.resolve({ ok: true, listing })
+    }),
     getPostRoute(
       `${PET_API_PREFIX}/custom-models`,
       async () => service.customModelsFile(),
