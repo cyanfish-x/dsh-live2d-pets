@@ -96,6 +96,7 @@ const ANIMATION_SLOT_LABELS: Record<AnimationSlot, string> = {
   error: '出错',
   done: '完成',
   waiting: '等待审批',
+  delivered: '交付庆祝',
   head: '摸头',
   leg: '摸腿',
   arm: '摸手',
@@ -265,7 +266,7 @@ function spatialTapFields(
   )
 }
 
-/** 动画映射表单：9 个槽位各一个多选下拉；解析失败时显示重试。 */
+/** 动画映射表单：10 个槽位各一个多选下拉；解析失败时显示重试。 */
 function motionMapFields(
   draft: MotionMap,
   setDraft: (next: MotionMap) => void,

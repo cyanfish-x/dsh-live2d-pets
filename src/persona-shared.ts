@@ -1,6 +1,6 @@
 /**
  * 人设共享层（Host 与 client 两半区共用，纯常量与类型，零平台依赖）。
- * - CopyTable：一整套台词池（13 池：3 短状态 + 思考/等审批各 3 阶段 + 4 部位互动）
+ * - CopyTable：一整套台词池（14 池：4 短状态 + 思考/等审批各 3 阶段 + 4 部位互动）
  * - CustomPersonaDef：$DSH_HOME/live2d-pet/personas.jsonc 里的自定义人设条目
  * - PERSONAS_TEMPLATE：首次落地到上述文件的内容（JSONC，含注释版女仆彩蛋）
  * @module dsh-live2d-pets/persona-shared
@@ -11,6 +11,7 @@ export interface CopyTable {
   idle: string[]
   error: string[]
   done: string[]
+  delivered: string[]
   thinking1: string[]
   thinking2: string[]
   thinking3: string[]
@@ -28,7 +29,7 @@ export type CopyKey = keyof CopyTable
 
 /** 全部台词池键（自定义条目校验/合并用）。 */
 export const COPY_KEYS: readonly CopyKey[] = [
-  'idle', 'error', 'done',
+  'idle', 'error', 'done', 'delivered',
   'thinking1', 'thinking2', 'thinking3',
   'waiting1', 'waiting2', 'waiting3',
   'tapHead', 'tapLeg', 'tapArm', 'tapBody',
@@ -68,7 +69,7 @@ export const PERSONAS_TEMPLATE = `{
   //  · name ：下拉显示名（缺省用 id）
   //  · base ：继承哪个人设（内置：tsundere/genki/airhead/kuudere/healing/yandere，
   //           也可填其它自定义 id）；没写的台词池沿用基座的
-  //  · copy ：想覆盖的台词池（13 池：idle/error/done、
+  //  · copy ：想覆盖的台词池（14 池：idle/error/done/delivered、
   //           thinking1~3、waiting1~3、tapHead/tapLeg/tapArm/tapBody）
   //  · 改完保存 → 设置页「人设」区点 ↻ 重新读取 即时生效（宠物当场换台词）
   //

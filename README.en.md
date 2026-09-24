@@ -17,7 +17,7 @@ A Live2D desk girl for **DeepSeek Harness (DSH)**: it tilts its head when you th
 ## Features
 
 - **Model loading**: 5 curated presets (Hiyori / Haru / Mao / Mark / Natori) plus custom entries; any `.model3.json` over **https / http**, or an **absolute local path** (e.g. `C:/models/foo/foo.model3.json`) served by the plugin Host through a same-origin route; custom models support **animation mapping** to bind native motion groups to pet states / touch interactions
-- **State mirroring**: the pet reflects agent thinking / idle / error / done / waiting-for-approval (motion + bubbles, SSE push)
+- **State mirroring**: the pet reflects agent thinking / idle / error / done / file-delivery celebration / waiting-for-approval (motion + bubbles, SSE push)
 - **Personas**: six built-in tones (tsundere / genki / airhead / kuudere / gentle / yandere); custom personas via a plugin-owned JSONC file with hot reload
 - **Companionship**: part-based tap reactions / mouse-follow (head, eyes and body look toward the pointer) / free drag docking / task-done celebration; when HitAreas are sparse, spatial fallback uses five AABB rectangles
 - **Settings panel**: DSH Settings → “Pet config” — enable, size, FPS, persona, models, developer options; scalar settings are persisted to `~/.dsh/settings.yaml`, while custom personas and custom models live in `~/.dsh/live2d-pet/` plugin-owned JSONC files; applies immediately

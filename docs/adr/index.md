@@ -17,3 +17,4 @@
 | [009](009-custom-model-animation-mapping.md) | 自定义模型动画映射与 debug 动画预览 | Accepted |
 | [010](010-local-model-host-route.md) | 本地模型通过 Host 路由加载 | Accepted |
 | [011](011-dsh-0.1.5-rc.1-adaptation.md) | 适配 DSH 0.1.5-rc.1（client-runtime 移除、settings namespace 字符串化、依赖策略对齐官方） | Accepted |
+| [012](012-dsh-0.1.5-rc.3-session-plane.md) | 适配 DSH 0.1.5-rc.3 并接入会话面能力（直达打开恢复、交付庆祝） | Accepted |

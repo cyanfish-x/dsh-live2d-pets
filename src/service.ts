@@ -1,13 +1,16 @@
 /**
  * PetService：宠物状态机 + 显示配置 + 持久化。
  * 状态源为 DSH 真实事件（Event.listEvents 实测）：
- *   agent/status（idle⇄running）、agent/error、agent/turn-stopping、approval/request。
+ *   agent/status（idle⇄running）、agent/error、agent/turn-stopping、approval/request、
+ *   session/event 总线上的 deliverables/presented（交付庆祝，ADR-012）。
  * 配置经 getConfig() 读取 settings 解析值（schema 默认 → base → 用户层）。
  * @module dsh-live2d-pets/service
  */
 
 import type { Context } from '@deepseek-ai/cordis'
 import type {} from '@deepseek-ai/dsh-agent'
+import type {} from '@deepseek-ai/dsh-session'
+import type {} from '@deepseek-ai/dsh-tool-present/types'
 import type {} from '@deepseek-ai/dsh-user-approval'
 import type { Config } from './index.ts'
 import type { CustomModelEntry, MotionMap, SpatialTapConfig } from './models.ts'
@@ -23,7 +26,7 @@ import {
 import { PersonasStore, type PersonasFileView } from './personas.ts'
 import { DEFAULT_PERSONA_ID, type CustomPersonaDef } from './persona-shared.ts'
 
-export type PetState = 'idle' | 'thinking' | 'error' | 'done' | 'waiting'
+export type PetState = 'idle' | 'thinking' | 'error' | 'done' | 'waiting' | 'delivered'
 
 export interface PetStateView {
   state: PetState
@@ -56,7 +59,7 @@ export interface PetStateView {
   version: number
 }
 
-/** "完成"庆祝状态在回到空闲前的保持时长（ms）。 */
+/** "完成/交付"庆祝状态在回到空闲前的保持时长（ms）。 */
 const DONE_HOLD_MS = 3500
 
 /** 变化通知监听器（状态/显示/配置变化时触发，供 SSE 推送使用）。 */
@@ -67,7 +70,7 @@ export class PetService {
   private agent = 'idle'
   private version = 0
   private display: PetDisplay
-  private doneTimerId: ReturnType<typeof setTimeout> | undefined
+  private holdTimerId: ReturnType<typeof setTimeout> | undefined
   private listeners = new Set<ChangeListener>()
 
   constructor(
@@ -77,9 +80,9 @@ export class PetService {
     private readonly customModelsStore?: CustomModelsStore,
   ) {
     this.display = loadPetPersist()
-    // 卸载时清理"完成"保持计时器
+    // 卸载时清理"完成/交付"保持计时器
     ctx.effect(() => () => {
-      if (this.doneTimerId) clearTimeout(this.doneTimerId)
+      if (this.holdTimerId) clearTimeout(this.holdTimerId)
     })
 
     ctx.on('agent/status', (payload) => {
@@ -88,25 +91,32 @@ export class PetService {
       this.agent = String(status)
       if (status === 'running') {
         this.set('thinking')
-      } else if (status === 'idle' && this.state !== 'done') {
-        // done 保持期内到达的 idle 不打断庆祝（由 setDone 的计时器负责回收）
+      } else if (status === 'idle' && this.state !== 'done' && this.state !== 'delivered') {
+        // done/delivered 保持期内到达的 idle 不打断庆祝（由保持计时器负责回收）
         this.set('idle')
       }
     })
     ctx.on('agent/error', () => this.set('error'))
-    ctx.on('agent/turn-stopping', () => this.setDone())
+    ctx.on('agent/turn-stopping', () => {
+      // 交付保持期内紧随的轮次结束不打断交付庆祝（交付是更强的完成时刻，ADR-012）
+      if (this.state !== 'delivered') this.setDone()
+    })
     // approval/request 是 waterfall 事件：必须调用 next() 放行审批链
     ctx.on('approval/request', (_req, next) => {
       this.set('waiting')
       return next()
     })
+    // 模型经 present 工具交付文件（会话事件总线，ADR-012）
+    ctx.on('session/event', (_session, event) => {
+      if (event?.type === 'deliverables/presented') this.setDelivered()
+    })
   }
 
-  /** 立即切换状态；取消未完成的"完成"保持计时。 */
+  /** 立即切换状态；取消未完成的"完成/交付"保持计时。 */
   private set(next: PetState): void {
-    if (this.doneTimerId) {
-      clearTimeout(this.doneTimerId)
-      this.doneTimerId = undefined
+    if (this.holdTimerId) {
+      clearTimeout(this.holdTimerId)
+      this.holdTimerId = undefined
     }
     if (this.state === next) return
     this.state = next
@@ -114,13 +124,21 @@ export class PetService {
     this.emitChange()
   }
 
-  /** 进入"完成"并保持 DONE_HOLD_MS 后回空闲（客户端据此播庆祝动画）。 */
-  private setDone(): void {
-    this.set('done')
-    this.doneTimerId = setTimeout(() => {
-      this.doneTimerId = undefined
+  /** 进入庆祝态（done/delivered）并保持 DONE_HOLD_MS 后回空闲（客户端据此播庆祝动画）。 */
+  private setHeld(state: 'done' | 'delivered'): void {
+    this.set(state)
+    this.holdTimerId = setTimeout(() => {
+      this.holdTimerId = undefined
       this.set('idle')
     }, DONE_HOLD_MS)
+  }
+
+  private setDone(): void {
+    this.setHeld('done')
+  }
+
+  private setDelivered(): void {
+    this.setHeld('delivered')
   }
 
   /** 浏览器轮询用的状态快照（配置实时读取 settings 解析值；人设文件每次现读，spec §2）。 */

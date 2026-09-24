@@ -21,16 +21,16 @@ export interface BuiltinPreset {
 }
 
 /**
- * 动画映射槽位：5 个宠物状态 + 4 个互动部位。
+ * 动画映射槽位：6 个宠物状态 + 4 个互动部位。
  * 每个槽位可配置一个或多个动作组；多选时触发随机选一个播放。
  */
 export type AnimationSlot =
-  | 'idle' | 'thinking' | 'error' | 'done' | 'waiting'
+  | 'idle' | 'thinking' | 'error' | 'done' | 'waiting' | 'delivered'
   | 'head' | 'leg' | 'arm' | 'body'
 
 /** 全部动画映射槽位（设置页表单 / 默认映射共用）。 */
 export const ANIMATION_SLOTS: readonly AnimationSlot[] = [
-  'idle', 'thinking', 'error', 'done', 'waiting',
+  'idle', 'thinking', 'error', 'done', 'waiting', 'delivered',
   'head', 'leg', 'arm', 'body',
 ]
 
@@ -47,6 +47,7 @@ export const DEFAULT_MOTION_MAP: MotionMap = {
   error: ['Failed', 'Sad', 'Idle'],
   done: ['Jumping', 'Done', 'Idle'],
   waiting: ['Waiting', 'Idle'],
+  delivered: ['Jumping', 'Done', 'Idle'],
   head: ['TapHead', 'TapBody'],
   leg: ['TapLeg', 'TapBody'],
   arm: ['TapArm', 'TapBody'],

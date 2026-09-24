@@ -1,6 +1,6 @@
 /**
  * 内置人设文案表（client 常量，spec §3）：六种二次元经典性格，
- * 每人设一整套 13 池台词（短状态 + 思考/等审批阶段 + 四档部位互动）。
+ * 每人设一整套 14 池台词（短状态 + 思考/等审批阶段 + 四档部位互动）。
  * 自定义人设（$DSH_HOME/live2d-pet/personas.jsonc）在 client 端按 base 继承合并，
  * 合并结果与本表同构，宠物台词一律从「当前人设台词表」取。
  * @module dsh-live2d-pets/client/personas
@@ -18,6 +18,7 @@ export const BUILTIN_PERSONAS: ReadonlyArray<{ id: string; name: string; copy: C
       idle: ['闲、闲着才不是在等你！', '别、别一直盯着看啊！'],
       error: ['哼，才不是我搞坏的！…要看就快看啦！', '出错了…怎、怎么办啊笨蛋！'],
       done: ['搞定了！…才不是为了求夸奖！', '哼，这点小事轻轻松松啦！'],
+      delivered: ['给、给你的！才不是特意做的！', '喏，成果。…夸我一句会死吗！'],
       thinking1: ['思考中…', '让我想想…'],
       thinking2: ['还在想…', '让我再理理思路…'],
       thinking3: ['这个问题有点东西…', '快了快了…'],
@@ -37,6 +38,7 @@ export const BUILTIN_PERSONAS: ReadonlyArray<{ id: string; name: string; copy: C
       idle: ['元气满满待机中！', '今天也要一起冲鸭！'],
       error: ['呜哇出错了！马上重整旗鼓！', '哎呀翻车了…再来一次一定行！'],
       done: ['搞定啦！我最棒吧！', '任务完成！给我鼓掌！'],
+      delivered: ['交货啦！快看快看！', '成果出炉！我超厉害对吧！'],
       thinking1: ['收到！速速思考中！', '让我想想哦！'],
       thinking2: ['还在想，马上就好！', '灵感快来快来！'],
       thinking3: ['这关有点难，但我不怕！', '冲冲冲，快打通了！'],
@@ -56,6 +58,7 @@ export const BUILTIN_PERSONAS: ReadonlyArray<{ id: string; name: string; copy: C
       idle: ['发呆中…咦我在哪…', '咦…刚才想说什么来着…'],
       error: ['咦？坏掉了诶…', '出错了…要、要怎么办来着…'],
       done: ['咦，做好了吗？', '完成…啦？要夸夸我哦…'],
+      delivered: ['咦？交出去了吗…', '这个给你…要好好收哦…'],
       thinking1: ['想想想中…', '让我想想哦…'],
       thinking2: ['还、还没想出来…', '咦，刚才想到哪了…'],
       thinking3: ['想了好久，肚子饿了…', '这个…好难诶…'],
@@ -75,6 +78,7 @@ export const BUILTIN_PERSONAS: ReadonlyArray<{ id: string; name: string; copy: C
       idle: ['在。', '无事。'],
       error: ['出错。需要你。', '异常。原因不明。'],
       done: ['完成。', '结束了。'],
+      delivered: ['交付完毕。', '文件，在这里。'],
       thinking1: ['思考中。', '解析。'],
       thinking2: ['仍在思考。', '继续。'],
       thinking3: ['难度：高。', '尚未结束。'],
@@ -94,6 +98,7 @@ export const BUILTIN_PERSONAS: ReadonlyArray<{ id: string; name: string; copy: C
       idle: ['一直陪着你哦~', '需要我的时候说一声~'],
       error: ['出错了呢…一起看看好吗？', '别急，我们慢慢来~'],
       done: ['做好啦，辛苦你了~', '完成了，休息一下吧~'],
+      delivered: ['给你做好啦~', '成果在这里，慢慢看哦~'],
       thinking1: ['我想想哦…', '交给我吧~'],
       thinking2: ['还在想，不急哦…', '快好了，等我一下下~'],
       thinking3: ['这个问题好认真…', '马上就通了，再等等我~'],
@@ -113,6 +118,7 @@ export const BUILTIN_PERSONAS: ReadonlyArray<{ id: string; name: string; copy: C
       idle: ['一直看着你哦…', '你不在的话…会很寂寞的…'],
       error: ['谁弄坏的…告诉我名字…', '坏掉了…不过，还有我在…'],
       done: ['只为你做的哦…', '完成…只夸我一个人…'],
+      delivered: ['只给你一个人的文件哦…', '收好…不许给别人看…'],
       thinking1: ['为了你，思考中…', '想想怎么帮你…'],
       thinking2: ['还没想完…不要走开哦…', '再等一下下就好…'],
       thinking3: ['想太久了…对不起…', '快好了…别离开我…'],

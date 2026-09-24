@@ -24,9 +24,13 @@ function makeHarness(overrides: Partial<Config> = {}) {
     for (const fn of handlers.get(event) ?? []) fn(payload, next)
     return next
   }
+  // 双参事件（如 session/event 的 (session, event) 载荷）
+  const emitArgs = (event: string, ...args: unknown[]) => {
+    for (const fn of handlers.get(event) ?? []) (fn as (...a: unknown[]) => unknown)(...args)
+  }
   const config = { ...BASE_CONFIG, ...overrides }
   const service = new PetService(ctx, () => config)
-  return { service, emit, dispose: () => { for (const fn of effects) fn() } }
+  return { service, emit, emitArgs, dispose: () => { for (const fn of effects) fn() } }
 }
 
 beforeEach(() => {
@@ -98,6 +102,32 @@ describe('PetService 状态机', () => {
   it('done 保持期内 running → thinking 并取消保持计时', () => {
     const { service, emit } = makeHarness()
     emit('agent/turn-stopping', {})
+    emit('agent/status', { status: 'running' })
+    expect(service.snapshot().state).toBe('thinking')
+    vi.advanceTimersByTime(3500)
+    expect(service.snapshot().state).toBe('thinking')
+  })
+  it('deliverables/presented → delivered；保持期内 idle/turn-stopping 不打断，3.5s 后回 idle', () => {
+    const { service, emit, emitArgs } = makeHarness()
+    emitArgs('session/event', {}, { type: 'deliverables/presented' })
+    expect(service.snapshot().state).toBe('delivered')
+    emit('agent/status', { status: 'idle' })
+    emit('agent/turn-stopping', {})
+    expect(service.snapshot().state).toBe('delivered')
+    vi.advanceTimersByTime(3500)
+    expect(service.snapshot().state).toBe('idle')
+  })
+  it('无关 session/event 不触发交付态', () => {
+    const { service, emitArgs } = makeHarness()
+    emitArgs('session/event', {}, { type: 'turn/message' })
+    expect(service.snapshot().state).toBe('idle')
+  })
+  it('done 保持期内交付升级为 delivered；thinking 仍即时打断', () => {
+    const { service, emit, emitArgs } = makeHarness()
+    emit('agent/turn-stopping', {})
+    expect(service.snapshot().state).toBe('done')
+    emitArgs('session/event', {}, { type: 'deliverables/presented' })
+    expect(service.snapshot().state).toBe('delivered')
     emit('agent/status', { status: 'running' })
     expect(service.snapshot().state).toBe('thinking')
     vi.advanceTimersByTime(3500)

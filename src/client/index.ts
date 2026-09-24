@@ -78,10 +78,11 @@ const STAGED_COPY_KEYS: Partial<Record<PetState, StageCopyKey[]>> = {
   waiting: ['waiting1', 'waiting2', 'waiting3'],
 }
 /** 短状态（瞬态气泡）→ 台词池键；无键的状态不冒泡。 */
-const TRANSIENT_COPY_KEYS: Partial<Record<PetState, 'idle' | 'error' | 'done'>> = {
+const TRANSIENT_COPY_KEYS: Partial<Record<PetState, 'idle' | 'error' | 'done' | 'delivered'>> = {
   idle: 'idle',
   error: 'error',
   done: 'done',
+  delivered: 'delivered',
 }
 /** vendor 运行时脚本（Host 同源路由，ADR-003）。 */
 const VENDOR_SCRIPTS = [
@@ -1060,12 +1061,12 @@ function boot(anchor: HTMLDivElement | null): (() => void) | undefined {
         return el
       }
 
-      // 状态演示：等宽按钮网格
+      // 状态演示：等宽按钮网格（六态两行三列）
       const demoLabel = sectionLabel('状态演示')
       debugEl.appendChild(demoLabel)
       const demoRow = document.createElement('div')
-      demoRow.style.cssText = 'display:grid;grid-template-columns:repeat(5,1fr);gap:4px'
-      for (const st of ['idle', 'thinking', 'waiting', 'done', 'error'] as const) {
+      demoRow.style.cssText = 'display:grid;grid-template-columns:repeat(3,1fr);gap:4px'
+      for (const st of ['idle', 'thinking', 'waiting', 'done', 'delivered', 'error'] as const) {
         const btn = document.createElement('button')
         btn.textContent = st
         btn.style.cssText = 'padding:4px 0;border-radius:6px;border:1px solid rgba(128,128,128,.25);background:rgba(128,128,128,.1);color:#dbe2ef;font-size:11px;font-family:inherit;cursor:pointer;outline:none'
@@ -1349,11 +1350,22 @@ export function apply(ctx: ClientContext): void {
     () => createElement(PetAnchor),
   ))
 
-  // 「自定义人设 ↗」直达打开（spec §2）：曾优先经 DSH workspaces.openPath 用系统
-  // 默认程序打开人设文件；DSH 0.1.5 起 IWorkspaces 已移除 openPath（能力未提供时
-  // 结构探测返回 false），由设置页弹层兜底（复制路径/模板）。
+  // 「自定义人设 ↗」等三处直达打开（spec §2，ADR-012 探测链）：
+  // 1) DSH 0.1.5 客户端远程面：服务键 remote.<namespace>（dsh-api-gateway client
+  //    的 remoteServiceKey 实测；sessionController 服务只在 Host 侧存在），
+  //    会话命名空间 session 下的 openWorkspacePath——Host 侧经系统原生打开器
+  //    执行，受 nativeOpen 部署策略与连接信任栅栏门控；
+  // 2) 旧面 workspaces.openPath（0.1.0 时代，官方恢复则自动升回）；
+  // 3) 均不可用或调用被拒 → 返回 false，由设置页弹层兜底（复制路径/模板，ADR-011）。
   const openPath = async (path: string): Promise<boolean> => {
     try {
+      const session = ctx.get('remote.session') as {
+        openWorkspacePath?: (req: { path: string; action?: 'reveal' }, signal?: AbortSignal) => Promise<{ opened?: true }>
+      } | undefined
+      if (session && typeof session.openWorkspacePath === 'function') {
+        await session.openWorkspacePath({ path })
+        return true
+      }
       const workspaces = ctx.get('workspaces') as { openPath?: (p: string) => Promise<void> } | undefined
       if (!workspaces?.openPath) return false
       await workspaces.openPath(path)
@@ -1363,9 +1375,6 @@ export function apply(ctx: ClientContext): void {
     }
   }
 
-  // 桌宠配置设置页（settings.section，spec §2）：开关/尺寸/人设/模型列表/调试，
-  // 读写经插件自身 API（/api/live2d-pet/settings，Host 直连 ctx.settings；
-  // 不走 settingsScope wire，见 docs/research/settings-tab.md「设置服务不可用」根因）。
   // 桌宠配置设置页（settings.section，spec §2）：开关/尺寸/人设/模型列表/调试，
   // 读写经插件自身 API（/api/live2d-pet/settings，Host 直连 ctx.settings；
   // 不走 settingsScope wire，见 docs/research/settings-tab.md「设置服务不可用」根因）。
