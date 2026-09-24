@@ -16,7 +16,7 @@
  */
 
 import { createElement, useEffect, useRef } from 'react'
-import type { ClientContext } from '@deepseek-ai/dsh-client-runtime/client'
+import type { Context as ClientContext } from '@deepseek-ai/cordis'
 import type { ReactNode } from 'react'
 import type { PetState, PetStateView } from '../service.ts'
 import { PetSettingsSection } from './settings.ts'
@@ -1349,8 +1349,9 @@ export function apply(ctx: ClientContext): void {
     () => createElement(PetAnchor),
   ))
 
-  // 「自定义人设 ↗」直达打开（spec §2）：优先经 DSH workspaces.openPath 用系统
-  // 默认程序打开人设文件；服务不存在/无权限/打开失败由设置页弹层兜底。
+  // 「自定义人设 ↗」直达打开（spec §2）：曾优先经 DSH workspaces.openPath 用系统
+  // 默认程序打开人设文件；DSH 0.1.5 起 IWorkspaces 已移除 openPath（能力未提供时
+  // 结构探测返回 false），由设置页弹层兜底（复制路径/模板）。
   const openPath = async (path: string): Promise<boolean> => {
     try {
       const workspaces = ctx.get('workspaces') as { openPath?: (p: string) => Promise<void> } | undefined

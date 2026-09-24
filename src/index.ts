@@ -7,7 +7,7 @@
  */
 
 import type { Context } from '@deepseek-ai/cordis'
-import { settingsNamespace, type SettingsPathOp } from '@deepseek-ai/dsh-settings'
+import type { SettingsPathOp } from '@deepseek-ai/dsh-settings'
 import Schema from '@deepseek-ai/schemastery'
 import type {} from '@deepseek-ai/dsh-host-webserver'
 import { PetService } from './service.ts'
@@ -47,8 +47,11 @@ export const name = 'live2d-pet'
 /** settings namespace（settings.yaml 用户层 section 名）。 */
 export const SETTINGS_NAMESPACE = 'live2d-pet'
 
-/** 品牌化 namespace（dsh-settings 类型约束）。 */
-const NS = settingsNamespace(SETTINGS_NAMESPACE)
+/**
+ * 品牌化 namespace（dsh-settings 类型约束）：0.1.5 起 settingsNamespace() 品牌
+ * 函数已移除，namespace 直接传小写连字符字符串，合法性由泛型参数编译期校验。
+ */
+const NS = SETTINGS_NAMESPACE
 
 /** 渲染帧率档（spec §2/§7）：30 / 60 / 0（不限制，对应 PIXI maxFPS=0）。 */
 export type MaxFpsOption = 30 | 60 | 0
